@@ -1,3 +1,4 @@
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.regex.Pattern;
@@ -8,7 +9,8 @@ import edu.uci.ics.crawler4j.parser.HtmlParseData;
 import edu.uci.ics.crawler4j.url.WebURL;
 
 public class MyCrawler extends WebCrawler {
-
+	
+	static MongoDBConnector conn = new MongoDBConnector().openConnection();
     private final static Pattern FILTERS = Pattern.compile(".*(\\.(css|js|gif|jpg"
                                                            + "|png|mp3|mp3|zip|gz))$");
 
@@ -46,18 +48,8 @@ public class MyCrawler extends WebCrawler {
          logger.info("Sub-domain: '{}'", subDomain);
          logger.debug("Path: '{}'", path);
          
-         findDomainsAndPages(subDomain, url);
-         
-         if (page.getParseData() instanceof HtmlParseData) {
-             HtmlParseData htmlParseData = (HtmlParseData) page.getParseData();
-             String text = htmlParseData.getText();
-             String html = htmlParseData.getHtml();
-             Set<WebURL> links = htmlParseData.getOutgoingUrls();
-
-             System.out.println("Text length: " + text.length());
-             System.out.println("Html length: " + html.length());
-             System.out.println("Number of outgoing links: " + links.size());
-         }
+         findDomainsAndPages(subDomain, url);         
+         parseResponse(page);
     }
      
     public void addUniquePages(WebURL url){
@@ -81,7 +73,24 @@ public class MyCrawler extends WebCrawler {
     	System.out.println(Stats.subDomainsPageCount.toString());
     }
     
-    public void parseResponse(){
-    	
+    public void parseResponse(Page page){
+    	if (page.getParseData() instanceof HtmlParseData) {
+            HtmlParseData htmlParseData = (HtmlParseData) page.getParseData();
+            String text = htmlParseData.getText();
+            String html = htmlParseData.getHtml();
+            Set<WebURL> links = htmlParseData.getOutgoingUrls();
+            
+            HashMap<String, Object> responseBody = new HashMap<String,Object>();
+            responseBody.put("URL", page.getWebURL().getURL());
+            responseBody.put("HTML_RES", html);
+            responseBody.put("TEXT_RES", text);
+            System.out.println(responseBody.toString());
+            conn.insertDocument("webcrawler_data",responseBody);
+            System.out.println("Text url: " + page.getWebURL().getURL());
+            System.out.println("Text length: " + text.length());
+            System.out.println("Html length: " + html.length());
+            System.out.println("Number of outgoing links: " + links.size());
+            
+        }
     }
 }
