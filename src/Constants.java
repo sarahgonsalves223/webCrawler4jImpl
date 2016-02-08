@@ -12,5 +12,6 @@ public class Constants {
 	public static final MongoClient mongoClient = new MongoClient();
 	public static final MongoDatabase db = mongoClient.getDatabase("crawler");
 	public static final Boolean SHOULD_CRAWL = false;
+	public static final int BATCH_SIZE =500;
 	
 }

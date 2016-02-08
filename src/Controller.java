@@ -1,4 +1,8 @@
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
+
+import com.google.common.collect.Lists;
 
 import edu.uci.ics.crawler4j.crawler.CrawlConfig;
 import edu.uci.ics.crawler4j.crawler.CrawlController;
@@ -47,13 +51,30 @@ public class Controller {
         
         } else {
         	// process crawled data
+        	StringUtils stringUtils = new StringUtils();
         	DBWrapper db = new DBWrapper();
-        	HashMap<String,HashMap<String,String>> records =db.fetch();
-        	System.out.println(records.size());
+        	for(int i=0;i<68709;i++){
+        		HashMap<String,HashMap<String,String>> records =db.fetch(i); //don't make multiple db calls fetch records in batches of 500 and process
+        		for(String url:records.keySet()){
+        			stringUtils.mapPageTo3Grams(records.get(url).get("TEXT_RES"));
+        		}
+        	}
         	//to get records
-        	/*for(String url:records.keySet()){
-        		System.out.println(records.get(url).toString());
-        	}*/
+        	/* List<String> listToBatch = new ArrayList<String>();
+        	 listToBatch.addAll(records.keySet());
+        	 List<List<String>> batch = Lists.partition(listToBatch, 10);
+        	 
+        	 for (List<String> urllist : batch) {
+        		 for(String url:urllist){
+        	    	stringUtils.mapPageTo3Grams(records.get(url).get("TEXT_RES"));
+        	      }
+        	 }*/
+        	
+        	for(String gram: Stats.threeGramSet.keySet()){
+        		System.out.print(gram+"**"+Stats.threeGramSet.get(gram));
+        		System.out.println("");
+        	}
+        	
         }  
     }
 }

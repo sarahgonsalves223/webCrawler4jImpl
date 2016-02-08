@@ -15,8 +15,8 @@ public class StringUtils {
 
 	public void tokenizePage(String page){
 		loadStopWords();
-		page.replaceAll("[\\p{Punct}&&[^.,\\s]]", "");
-		page.replaceAll("[.,\\s]", " ");
+		page = page.replaceAll("[\\p{Punct}&&[^.,\\s]]", "");
+		page = page.replaceAll("[.,\\s]", " ");
 		for(String current_word: page.split(" ")){
 			current_word = current_word.trim();
 			current_word = current_word.toLowerCase();
@@ -82,12 +82,13 @@ public class StringUtils {
 		BufferedReader br = new BufferedReader(new InputStreamReader(is));
 		String line;
 		try{
-			while ((line = br.readLine()) != null) {
-				line.replaceAll("[\\p{Punct}&&[^.,\\s]]", "");
-				line.replaceAll("[.,\\s]"," "); // this is so that a,c,d => a b d and acd.def => abc def
+			while ((line = br.readLine()) != null) {				
+				line=line.replaceAll("[\\p{Punct}&&[^.,\\s]]", "");
+				line=line.replaceAll("[.,\\s]"," "); // this is so that a,c,d => a b d and acd.def => abc def
+				line.trim();
 				String [] words = line.toLowerCase().split(" ");
-				for(int i=0;i<line.length();i++){
-					words[i]= Stats.stopWords.contains(words[i])|| words[i].matches("\\s+")?"":words[i];
+				for(int i=0;i<words.length;i++){
+					words[i]= Stats.stopWords.contains(words[i])|| words[i].matches("\\s+")?"":words[i].trim();
 				}
 				String three_gram_string="";
 				for(int i=0;i<words.length-2;i+=3){
@@ -97,6 +98,8 @@ public class StringUtils {
 					} else {
 						Stats.threeGramSet.put(three_gram_string, Stats.threeGramSet.get(three_gram_string)+1);
 					}
+					
+					three_gram_string="";
 				}
 			}
 			br.close();

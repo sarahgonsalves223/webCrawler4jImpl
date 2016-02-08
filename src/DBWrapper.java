@@ -5,17 +5,20 @@ import org.bson.Document;
 import com.mongodb.Block;
 import com.mongodb.client.FindIterable;
 import com.mongodb.client.MongoCollection;
+import com.mongodb.client.model.Filters;
 
 public class DBWrapper {
 	private static MongoCollection<Document> collection = Constants.db.getCollection("webcrawler_data");
 	
-	public HashMap<String,HashMap<String,String>> fetch(){
+	public HashMap<String,HashMap<String,String>> fetch(int id){
 		/** source https://docs.mongodb.org/getting-started/java/query/
 		 * #query-for-all-documents-in-a-collection		*
 		*/
 		HashMap<String,HashMap<String,String>> record = new HashMap<String,HashMap<String,String>>();
-		FindIterable<Document> iterable = collection.find();
-		iterable.batchSize(2);
+		
+		FindIterable<Document> iterable = collection.find(Filters.eq("_uid",id));
+		iterable.limit(1);
+		iterable.batchSize(Constants.BATCH_SIZE);
 		iterable.forEach(new Block<Document>() {
 		    @Override
 		    public void apply(final Document document) {
@@ -27,6 +30,7 @@ public class DBWrapper {
 		        recordValues.put("SUBDOMAIN",document.getString("SUBDOMAIN"));
 		        recordValues.put("NUM_WORDS",document.getInteger("NUM_WORDS").toString());
 		    	record.put(document.getString("URL"), recordValues);
+		    	//System.out.println("r "+document.getInteger("_uid"));
 		    }
 		});
 		
