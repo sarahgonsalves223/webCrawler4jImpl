@@ -13,6 +13,6 @@ public class Constants {
 	public static final MongoDatabase db = mongoClient.getDatabase("crawler");
 	public static final Boolean SHOULD_CRAWL = false;
 	public static final int BATCH_SIZE =500;
-	public static final int DB_ROW_COUNT =500;//68907;
+	public static final int DB_ROW_COUNT =68907;
 	
 }

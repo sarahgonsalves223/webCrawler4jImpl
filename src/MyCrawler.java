@@ -72,7 +72,6 @@ public class MyCrawler extends WebCrawler {
     
     public void setDomainPageCount(String subDomain){
     	Stats.subDomainsPageCount.put(subDomain, Stats.subDomains.get(subDomain).size());
-    	System.out.println(Stats.subDomainsPageCount.toString());
     }
     
     public void parseResponse(Page page){

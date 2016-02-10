@@ -45,6 +45,20 @@ public class StringUtils {
 		
 	}
 	
+	public String getSubDomain(String url){
+		String subdomain="";
+		try{
+			if(url.contains("www")){
+				subdomain=url.substring(url.indexOf("www.")+4,url.indexOf(".ics"));
+			} else {
+				subdomain = url.substring(url.indexOf("//")+2,url.indexOf(".ics"));
+			}
+		} catch (StringIndexOutOfBoundsException e){
+			
+		}
+		System.out.println("sub "+subdomain +"  "+url);
+		return subdomain;
+	}
 	public void loadStopWords(){		
 		try{
 			Scanner in = new Scanner(new File(Constants.FILE_NAME));
@@ -157,9 +171,9 @@ public class StringUtils {
 				bw.write(content);
 				bw.newLine();
 				if(limit !=-1){	// limit -1 == no limit
+					i++;
 					if(i==limit)
 						break;
-					i++;					
 				}
 			}
 			bw.flush();

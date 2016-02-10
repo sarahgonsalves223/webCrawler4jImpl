@@ -61,7 +61,7 @@ public class Controller {
         		HashMap<String,HashMap<String,String>> records =db.fetch(i); //don't make multiple db calls fetch records in batches of 500 and process
         		for(String url:records.keySet()){
         			crawled.addUniquePages(url);
-        			crawled.findDomainsAndPages((records.get(url).get("SUBDOMAIN")), url);
+        			crawled.findDomainsAndPages(stringUtils.getSubDomain(url), url);
         			stringUtils.tokenizePage(records.get(url).get("TEXT_RES"));
         			stringUtils.mapPageTo3Grams(records.get(url).get("TEXT_RES"));
         			
@@ -76,7 +76,7 @@ public class Controller {
         	
         	System.out.println("*****Unique Pages******** "+Stats.uniquePages.size());
         	
-        	File threeGramFile = new File("resources/Three_Gram.txt");
+        	File threeGramFile = new File("resources/Three_Grams.txt");
         	File subDomainsFile = new File("resources/Subdomains.txt");
         	File domainWordsFile = new File("resources/CommonDomainWords.txt");
         	File longestPage = new File("resources/longestPage.txt");
@@ -88,7 +88,7 @@ public class Controller {
     			
     			FileWriter fw = new FileWriter(longestPage);
     			BufferedWriter bw = new BufferedWriter(fw);
-    			String content = "Longest Page url "+maxWordCountURL +" word count "+maxWordCount;
+    			String content = "Longest Page url: "+maxWordCountURL +"\n"+"word count :"+maxWordCount;
     			
     			bw.write(content);
     			bw.flush();
