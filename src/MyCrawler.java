@@ -32,7 +32,6 @@ public class MyCrawler extends WebCrawler {
      */
      @Override
      public boolean shouldVisit(Page referringPage, WebURL url) {
-    	 addUniquePages(url);
     	 String href = url.getURL().toLowerCase();
          return !FILTERS.matcher(href).matches()
                 && href.contains(Constants.DOMAIN)&& href.indexOf('?')==-1&& !href.contains("mailto") && !href.contains("duttgroup") && !href.contains("contact/student-affairs/contact/student-affairs");
@@ -44,34 +43,31 @@ public class MyCrawler extends WebCrawler {
       */
      @Override
      public void visit(Page page) {
-         /*String url = page.getWebURL().getURL();
-         String domain = page.getWebURL().getDomain();
-         String path = page.getWebURL().getPath();
-         String subDomain = page.getWebURL().getSubDomain();
-         
-         logger.info("URL: {}", url);
-         logger.debug("Domain: '{}'", domain);
-         logger.info("Sub-domain: '{}'", subDomain);
-         logger.debug("Path: '{}'", path);*/
-         
-         //findDomainsAndPages(subDomain, url);   need to uncomment this later      
-         parseResponse(page);
+    	parseResponse(page);
     }
      
-    public void addUniquePages(WebURL url){
+    public void addUniquePages(String url){
     	Stats.uniquePages.add(url);
     }
     
     public void findDomainsAndPages(String subDomain, String url){
-    	if(Stats.subDomains.get(subDomain)!=null){
-    		Stats.subDomains.get(subDomain).add(url);        	 
-        } else {
-       	 	HashSet<String> urlList = new HashSet<String>();
-       	 	urlList.add(url);
-       	 	Stats.subDomains.put(subDomain, urlList);
-        }
-        
-        setDomainPageCount(subDomain);       
+    	if(!(subDomain.length()==0 || subDomain.compareTo(".ics")==0 || subDomain.compareTo("ics")==0)){
+    		String subDomainStr;
+    		if(subDomain.contains(".ics"))
+    			subDomainStr= subDomain.substring(0,subDomain.indexOf(".ics"));
+    		else
+    			subDomainStr=subDomain;
+    		
+    		if(Stats.subDomains.get(subDomainStr)!=null){
+    			Stats.subDomains.get(subDomainStr).add(url);        	 
+    		} else {
+    			HashSet<String> urlList = new HashSet<String>();
+    			urlList.add(url);
+    			Stats.subDomains.put(subDomainStr, urlList);
+    		}
+
+    		setDomainPageCount(subDomainStr);
+    	}
     }
     
     public void setDomainPageCount(String subDomain){
@@ -106,15 +102,8 @@ public class MyCrawler extends WebCrawler {
             logger.debug("Time stamp "+ new Timestamp(date.getTime()));
             System.out.println("Time stamp "+new Timestamp(date.getTime())+" "+page.getWebURL().getURL());
             
-            executorService.submit(new MongoDBConnector("webcrawler_data","counters_collection",responseBody)); 
-            
-            //System.out.println(responseBody.toString());            
-            //conn.insertDocument("webcrawler_data",responseBody);
-            /*System.out.println("Text url: " + page.getWebURL().getURL());
-            System.out.println("Text length: " + text.length());
-            System.out.println("Html length: " + html.length());
-            System.out.println("Number of outgoing links: " + links.size());*/
-            
+            executorService.submit(new MongoDBConnector("webcrawler_data","counters_collection",responseBody));            
+                   
         }
     }
 }

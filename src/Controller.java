@@ -1,8 +1,8 @@
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
-
-import com.google.common.collect.Lists;
 
 import edu.uci.ics.crawler4j.crawler.CrawlConfig;
 import edu.uci.ics.crawler4j.crawler.CrawlController;
@@ -52,29 +52,58 @@ public class Controller {
         } else {
         	// process crawled data
         	StringUtils stringUtils = new StringUtils();
+        	MyCrawler crawled = new MyCrawler();
         	DBWrapper db = new DBWrapper();
-        	for(int i=0;i<68709;i++){
+        	int maxWordCount=0;
+        	String maxWordCountURL="";
+        	
+        	for(int i=0;i<Constants.DB_ROW_COUNT;i++){
         		HashMap<String,HashMap<String,String>> records =db.fetch(i); //don't make multiple db calls fetch records in batches of 500 and process
         		for(String url:records.keySet()){
+        			crawled.addUniquePages(url);
+        			crawled.findDomainsAndPages((records.get(url).get("SUBDOMAIN")), url);
+        			stringUtils.tokenizePage(records.get(url).get("TEXT_RES"));
         			stringUtils.mapPageTo3Grams(records.get(url).get("TEXT_RES"));
+        			
+        			int wordcount = Integer.parseInt(records.get(url).get("NUM_WORDS"));
+        			
+        			if(wordcount>=maxWordCount){
+        				maxWordCount=wordcount;
+        				maxWordCountURL = url;
+        			}
         		}
         	}
-        	//to get records
-        	/* List<String> listToBatch = new ArrayList<String>();
-        	 listToBatch.addAll(records.keySet());
-        	 List<List<String>> batch = Lists.partition(listToBatch, 10);
-        	 
-        	 for (List<String> urllist : batch) {
-        		 for(String url:urllist){
-        	    	stringUtils.mapPageTo3Grams(records.get(url).get("TEXT_RES"));
-        	      }
-        	 }*/
         	
-        	for(String gram: Stats.threeGramSet.keySet()){
-        		System.out.print(gram+"**"+Stats.threeGramSet.get(gram));
-        		System.out.println("");
-        	}
+        	System.out.println("*****Unique Pages******** "+Stats.uniquePages.size());
         	
+        	File threeGramFile = new File("resources/Three_Gram.txt");
+        	File subDomainsFile = new File("resources/Subdomains.txt");
+        	File domainWordsFile = new File("resources/CommonDomainWords.txt");
+        	File longestPage = new File("resources/longestPage.txt");
+        	
+        	try{
+    			if (!longestPage.exists()){
+    				longestPage.createNewFile();
+    			}	
+    			
+    			FileWriter fw = new FileWriter(longestPage);
+    			BufferedWriter bw = new BufferedWriter(fw);
+    			String content = "Longest Page url "+maxWordCountURL +" word count "+maxWordCount;
+    			
+    			bw.write(content);
+    			bw.flush();
+    			bw.close();				
+    		} catch (Exception e){
+    			e.printStackTrace();
+    		}
+        	
+        	ArrayList<StringUtils.Pair> threeGrams = stringUtils.sortMap(Stats.threeGramSet);
+        	ArrayList<StringUtils.Pair> commonWords = stringUtils.sortMap(Stats.tokenfrequencyList);
+        	ArrayList<StringUtils.Pair> domainPgCount = stringUtils.sortSet(Stats.subDomainsPageCount);
+        	
+        	stringUtils.print(threeGrams,threeGramFile,20);
+        	stringUtils.print(commonWords, domainWordsFile, 500);
+        	stringUtils.print(domainPgCount, subDomainsFile, -1); // -1 => no limit
         }  
     }
 }

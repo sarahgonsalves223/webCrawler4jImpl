@@ -1,9 +1,9 @@
 import java.io.BufferedReader;
-import java.io.ByteArrayInputStream;
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
+import java.io.FileWriter;
+import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -13,17 +13,31 @@ import java.util.Scanner;
 
 public class StringUtils {
 
-	public void tokenizePage(String page){
+	public ArrayList<String> tokenizePage(String page){
 		loadStopWords();
-		page = page.replaceAll("[\\p{Punct}&&[^.,\\s]]", "");
-		page = page.replaceAll("[.,\\s]", " ");
-		for(String current_word: page.split(" ")){
-			current_word = current_word.trim();
-			current_word = current_word.toLowerCase();
-			if(!Stats.stopWords.contains(current_word) && !current_word.matches("\\s+")){
-				addToFrequencyList(current_word);				
+		ArrayList<String> tokensForPage = new ArrayList<String>(); // should not be a set. need to generate separate token list for each page for 3-grams
+		BufferedReader bf=new BufferedReader(new StringReader(page));		
+		String line;
+		try{
+			while((line=bf.readLine())!=null){
+				line = line.replaceAll("[.,;]", " ");
+				String [] words = line.toLowerCase().split(" ");
+
+				for(int i=0;i<words.length;i++){
+					words[i]=words[i].replaceAll("[^a-z0-9]+", "");
+					words[i]=words[i].toLowerCase().trim();				
+
+					if(!(Stats.stopWords.contains(words[i])|| words[i].matches("\\s+")|| words[i].length()<2)){
+						addToFrequencyList(words[i]);
+						tokensForPage.add(words[i]);
+					}	
+				}
 			}
-		}		
+		} catch (Exception e){
+			e.printStackTrace();
+		}
+		
+		return tokensForPage;
 	}
 	public String[] splitToWords(String page){
 		//stop words considered as words
@@ -48,12 +62,11 @@ public class StringUtils {
 	}
 
 	public void addToFrequencyList(String current_word){
-		if(!Stats.frequencyList.containsKey(current_word))
-			Stats.frequencyList.put(current_word, 1);
+		if(!Stats.tokenfrequencyList.containsKey(current_word))
+			Stats.tokenfrequencyList.put(current_word, 1);
 		else{
-			Stats.frequencyList.put(current_word, Stats.frequencyList.get(current_word)+1);
+			Stats.tokenfrequencyList.put(current_word, Stats.tokenfrequencyList.get(current_word)+1);
 		}
-
 	}
 
 	public void addToUrlWordList(String current_word, String url){
@@ -69,42 +82,23 @@ public class StringUtils {
 
 	public void mapWordsToURL(String page, String url){
 		tokenizePage(page);
-		for(String current_word: Stats.frequencyList.keySet()){
+		for(String current_word: Stats.tokenfrequencyList.keySet()){
 			addToUrlWordList(current_word, url);
 		}		
 	}
 	
 	public void mapPageTo3Grams(String page){
-		// convert String into InputStream
-		InputStream is = new ByteArrayInputStream(page.getBytes());
+		String threeGram = "";
+		ArrayList<String> tokens = tokenizePage(page);
 		
-		// read it with BufferedReader
-		BufferedReader br = new BufferedReader(new InputStreamReader(is));
-		String line;
-		try{
-			while ((line = br.readLine()) != null) {				
-				line=line.replaceAll("[\\p{Punct}&&[^.,\\s]]", "");
-				line=line.replaceAll("[.,\\s]"," "); // this is so that a,c,d => a b d and acd.def => abc def
-				line.trim();
-				String [] words = line.toLowerCase().split(" ");
-				for(int i=0;i<words.length;i++){
-					words[i]= Stats.stopWords.contains(words[i])|| words[i].matches("\\s+")?"":words[i].trim();
-				}
-				String three_gram_string="";
-				for(int i=0;i<words.length-2;i+=3){
-					three_gram_string+=words[i].trim()+" "+words[i+1].trim()+" "+words[i+2].trim();
-					if(Stats.threeGramSet.get(three_gram_string)==null){
-						Stats.threeGramSet.put(three_gram_string, 1);
-					} else {
-						Stats.threeGramSet.put(three_gram_string, Stats.threeGramSet.get(three_gram_string)+1);
-					}
-					
-					three_gram_string="";
-				}
+		for(int i=0;i<tokens.size()-3;i++){
+			threeGram = tokens.get(i)+" "+tokens.get(i+1)+" "+tokens.get(i+2);
+			threeGram= threeGram.trim();
+			if(Stats.threeGramSet.get(threeGram)==null){
+				Stats.threeGramSet.put(threeGram, 1);
+			} else {
+				Stats.threeGramSet.put(threeGram, Stats.threeGramSet.get(threeGram)+1);
 			}
-			br.close();
-		} catch (Exception e){
-			e.printStackTrace();
 		}		
 	}
 	
@@ -118,7 +112,7 @@ public class StringUtils {
 				return one.compareTo(two);
 			}
 		};
-
+	
 		Collections.sort(list, Collections.reverseOrder(cmp));
 		ArrayList<Pair> listPair = new ArrayList<Pair>();
 		for(String w: list){
@@ -129,19 +123,50 @@ public class StringUtils {
 		}
 		return listPair;
 	}
-
-	public void print(ArrayList<Pair> pairs){
-		int i=0;
-		for(Pair p: pairs){
-			i++;
-			System.out.println(p.word.toString() + " : " + p.frequency);
-			if(i>=500){
-				System.out.println("DONE DON");
-				break;
+	
+	public ArrayList<Pair> sortSet(Map<String, Integer> subDomainsPageCount){
+		ArrayList<String> list = new ArrayList<String>(subDomainsPageCount.keySet());
+		Comparator<String> cmp = new Comparator<String>(){
+			@Override
+			public int compare(String s1, String s2) {
+				return s1.compareTo(s2);
 			}
-
+		};
+		Collections.sort(list);
+		ArrayList<Pair> listPair = new ArrayList<Pair>();
+		for(String w: list){
+			Pair p = new Pair();
+			p.word = new String(w);
+			p.frequency = subDomainsPageCount.get(w);
+			listPair.add(p);
 		}
-
+		return listPair;
+	}
+	
+	public void print(ArrayList<Pair> pairs, File fileToPrint, int limit){
+		File file = fileToPrint;
+		int i=0;
+		try{
+			if (!file.exists()){
+				file.createNewFile();
+			}	
+			FileWriter fw = new FileWriter(file);
+			BufferedWriter bw = new BufferedWriter(fw);
+			for(Pair p: pairs){
+				String content = p.word.toString() + ":" + p.frequency;
+				bw.write(content);
+				bw.newLine();
+				if(limit !=-1){	// limit -1 == no limit
+					if(i==limit)
+						break;
+					i++;					
+				}
+			}
+			bw.flush();
+			bw.close();				
+		} catch (Exception e){
+			e.printStackTrace();
+		}		
 	}
 	
 	class Pair{
