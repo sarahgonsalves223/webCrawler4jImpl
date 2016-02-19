@@ -4,6 +4,10 @@ import java.io.FileWriter;
 import java.util.ArrayList;
 import java.util.HashMap;
 
+import org.bson.Document;
+
+import com.mongodb.client.MongoCollection;
+
 import edu.uci.ics.crawler4j.crawler.CrawlConfig;
 import edu.uci.ics.crawler4j.crawler.CrawlController;
 import edu.uci.ics.crawler4j.fetcher.PageFetcher;
@@ -37,7 +41,6 @@ public class Controller {
         	 * URLs that are fetched and then the crawler starts following links
         	 * which are found in these pages
         	 */
-        	controller.addSeed("http://www.ics.uci.edu/~lopes/");
         	controller.addSeed("http://www.ics.uci.edu/");
 
         	/*
@@ -52,13 +55,54 @@ public class Controller {
         } else {
         	// process crawled data
         	StringUtils stringUtils = new StringUtils();
+        	DBWrapper dbwrapper = new DBWrapper();
+        	MongoCollection<Document> collection = Constants.db.getCollection("webcrawler_data");
+        	HashMap<String, ArrayList<InvertedIndexEntry>> invertedIndex = new HashMap<String, ArrayList<InvertedIndexEntry>>();
+        	MongoDBConnector mongoConnector = new MongoDBConnector();
+        	
+        	for(int i=1;i<=Constants.DB_ROW_COUNT;i++){
+        		HashMap<String,HashMap<String,String>> records =dbwrapper.fetchOne(collection,i);
+        		ArrayList<Integer> termPositions=null;
+        		
+        		for(String url:records.keySet()){
+        			stringUtils.tokenizePage(records.get(url).get("TEXT_RES"));
+        			termPositions = stringUtils.findTermPositions();
+        			//records.get(url).get("HTML_RES");
+        		}
+        		
+        		for(String token:Stats.tokenfrequencyList.keySet()){
+        			ArrayList<InvertedIndexEntry> docItemList;
+        			if(invertedIndex.get(token)==null){
+        				docItemList = new ArrayList<InvertedIndexEntry>();
+        			} else {
+        				docItemList = invertedIndex.get(token);
+        			}
+        			
+        			InvertedIndexEntry docEntry = new InvertedIndexEntry();
+        			docEntry.setDocId(i);
+        			docEntry.setTermFrequency(Stats.tokenfrequencyList.get(token));
+        			docEntry.setTermPositions(termPositions);
+        			docItemList.add(docEntry);
+        			invertedIndex.put(token,docItemList);        				
+        		}
+        		
+        		if((i%1000)==0){
+        			//write after every 1000 records
+        			MongoCollection<Document> invertedIndexCollection = Constants.db.getCollection("inverted_index");
+        			mongoConnector.saveIndexBlock(invertedIndexCollection, invertedIndex);
+        			//flush
+        			invertedIndex.clear();
+        			Stats.tokenfrequencyList.clear();
+        		}
+        	}
+        	/*StringUtils stringUtils = new StringUtils();
         	MyCrawler crawled = new MyCrawler();
         	DBWrapper db = new DBWrapper();
         	int maxWordCount=0;
         	String maxWordCountURL="";
         	
         	for(int i=0;i<Constants.DB_ROW_COUNT;i++){
-        		HashMap<String,HashMap<String,String>> records =db.fetch(i); //don't make multiple db calls fetch records in batches of 500 and process
+        		HashMap<String,HashMap<String,String>> records =db.fetchOne(i); //don't make multiple db calls fetch records in batches of 500 and process
         		for(String url:records.keySet()){
         			crawled.addUniquePages(url);
         			crawled.findDomainsAndPages(stringUtils.getSubDomain(url), url);
@@ -104,6 +148,6 @@ public class Controller {
         	stringUtils.print(threeGrams,threeGramFile,20);
         	stringUtils.print(commonWords, domainWordsFile, 500);
         	stringUtils.print(domainPgCount, subDomainsFile, -1); // -1 => no limit
-        }  
+*/        }  
     }
 }

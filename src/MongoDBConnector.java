@@ -1,3 +1,6 @@
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
 import java.util.Map;
 
 import org.bson.Document;
@@ -12,6 +15,10 @@ public class MongoDBConnector implements Runnable{
 	private static MongoCollection<Document> countersCollection;
 	private static MongoCollection<Document> crawlerCollection;
 	
+	public MongoDBConnector(){
+		
+	}
+	
 	public MongoDBConnector(String collection, String counterCol, Map<String, Object> body) {
 		counterCollectionName = counterCol;
 		collectionName = collection;
@@ -24,14 +31,6 @@ public class MongoDBConnector implements Runnable{
 		}
 
 	}
-	/*MongoClient mongoClient;
-	MongoDatabase db;
-	
-	MongoDBConnector openConnection(){
-		mongoClient = new MongoClient(Constants.HOST,Constants.PORT);
-		db = mongoClient.getDatabase("crawler");
-		return this;
-	}*/
 	
 	void insertDocument(){
 		try{
@@ -52,6 +51,26 @@ public class MongoDBConnector implements Runnable{
 	    countersCollection.insertOne(document);
 	}
 
+	public void saveIndexBlock(MongoCollection<Document> indexEntry, HashMap<String, ArrayList<InvertedIndexEntry>> invertedIndexItems){
+		for(String term:invertedIndexItems.keySet()){
+			Document doc = new Document();
+			doc.append("term", term);
+			ArrayList<InvertedIndexEntry> invertedIndexItem = invertedIndexItems.get(term);
+			ArrayList<Document> docList = new ArrayList<Document>();
+			for(InvertedIndexEntry invertedIndex: invertedIndexItem){
+				Document listdoc = new Document();				
+				listdoc.append("doc_id", invertedIndex.getDocId());
+				listdoc.append("tf", invertedIndex.getTermFrequency());
+				listdoc.append("positions", Arrays.asList(invertedIndex.getTermPositions()));
+				docList.add(listdoc);
+			}
+			doc.append("docs", Arrays.asList(docList));
+			indexEntry.insertOne(doc);
+		}
+		
+		System.out.println("Done");
+	}
+	
 	public static Object getNextSequence(String name) {
 
 	    Document searchQuery = new Document("_id", name);

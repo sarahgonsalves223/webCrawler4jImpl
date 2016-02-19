@@ -14,5 +14,6 @@ public class Constants {
 	public static final Boolean SHOULD_CRAWL = false;
 	public static final int BATCH_SIZE =500;
 	public static final int DB_ROW_COUNT =68907;
+	public static final long MAX_HEAP_SIZE = Runtime.getRuntime().maxMemory();
 	
 }

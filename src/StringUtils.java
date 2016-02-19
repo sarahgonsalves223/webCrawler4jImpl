@@ -29,6 +29,7 @@ public class StringUtils {
 
 					if(!(Stats.stopWords.contains(words[i])|| words[i].matches("\\s+")|| words[i].length()<2)){
 						addToFrequencyList(words[i]);
+						// shift this if needed
 						tokensForPage.add(words[i]);
 					}	
 				}
@@ -43,6 +44,11 @@ public class StringUtils {
 		//stop words considered as words
 		return page.split("[.,;\\s\\n]");		
 		
+	}
+	
+	public ArrayList<Integer> findTermPositions(){
+		//implement this
+		return new ArrayList<Integer>();
 	}
 	
 	public String getSubDomain(String url){
