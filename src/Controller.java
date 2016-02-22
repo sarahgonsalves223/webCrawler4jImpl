@@ -62,37 +62,56 @@ public class Controller {
         	
         	for(int i=1;i<=Constants.DB_ROW_COUNT;i++){
         		HashMap<String,HashMap<String,String>> records =dbwrapper.fetchOne(collection,i);
-        		ArrayList<Integer> termPositions=null;
+        		ArrayList<Integer> termPositions=new ArrayList<Integer>();
+        		ArrayList<String> tokens = new ArrayList<String>();
+        		HashMap<String, ArrayList<Integer>> termPositionsMap = new HashMap<String, ArrayList<Integer>>(); 
         		
         		for(String url:records.keySet()){
-        			stringUtils.tokenizePage(records.get(url).get("TEXT_RES"));
-        			termPositions = stringUtils.findTermPositions();
+        			tokens = stringUtils.tokenizePage(records.get(url).get("TEXT_RES"));
+//        			termPositions = stringUtils.findTermPositions(tokens);®
         			//records.get(url).get("HTML_RES");
         		}
-        		
-        		for(String token:Stats.tokenfrequencyList.keySet()){
-        			ArrayList<InvertedIndexEntry> docItemList;
-        			if(invertedIndex.get(token)==null){
-        				docItemList = new ArrayList<InvertedIndexEntry>();
-        			} else {
-        				docItemList = invertedIndex.get(token);
+
+        		termPositionsMap = stringUtils.createTermPositions(tokens);
+        		for(String token: tokens){
+        			if(!Stats.stopWords.contains(token)){
+        				ArrayList<InvertedIndexEntry> docItemList;
+            			if(invertedIndex.get(token)==null){
+            				docItemList = new ArrayList<InvertedIndexEntry>();
+            			} else {
+            				docItemList = invertedIndex.get(token);
+            			}
+            			termPositions = stringUtils.findTermPositions(termPositionsMap, token);
+            			InvertedIndexEntry docEntry = new InvertedIndexEntry();
+            			docEntry.setDocId(i);
+            			docEntry.setTermFrequency(termPositions.size());
+            			docEntry.setTermPositions(termPositions);
+            			docItemList.add(docEntry);
+            			invertedIndex.put(token,docItemList);
+            			
+            			if(i>=1){
+            				System.out.println();
+            				System.out.println("word is:" +token);
+            				System.out.println("Doc Id is:" +docEntry.getDocId());
+            				System.out.println("Frequency of this word in this doc is:" + docEntry.getTermFrequency());
+            				System.out.println("Term positions are:");
+            				for(int j=0; j<termPositions.size(); j++){
+            					System.out.print(termPositions.get(j) + "  ");
+            				}
+            				System.out.println();
+            			}
         			}
-        			
-        			InvertedIndexEntry docEntry = new InvertedIndexEntry();
-        			docEntry.setDocId(i);
-        			docEntry.setTermFrequency(Stats.tokenfrequencyList.get(token));
-        			docEntry.setTermPositions(termPositions);
-        			docItemList.add(docEntry);
-        			invertedIndex.put(token,docItemList);        				
         		}
         		
+        		
         		if((i%1000)==0){
+        			System.out.println("la la done");
         			//write after every 1000 records
         			MongoCollection<Document> invertedIndexCollection = Constants.db.getCollection("inverted_index");
         			mongoConnector.saveIndexBlock(invertedIndexCollection, invertedIndex);
         			//flush
         			invertedIndex.clear();
-        			Stats.tokenfrequencyList.clear();
+//        			Stats.tokenfrequencyList.clear();
         		}
         	}
         	/*StringUtils stringUtils = new StringUtils();

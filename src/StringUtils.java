@@ -7,6 +7,7 @@ import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Scanner;
@@ -27,10 +28,12 @@ public class StringUtils {
 					words[i]=words[i].replaceAll("[^a-z0-9]+", "");
 					words[i]=words[i].toLowerCase().trim();				
 
-					if(!(Stats.stopWords.contains(words[i])|| words[i].matches("\\s+")|| words[i].length()<2)){
-						addToFrequencyList(words[i]);
-						// shift this if needed
+					if(!(words[i].matches("\\s+")|| words[i].length()<2)){
 						tokensForPage.add(words[i]);
+						if(!Stats.stopWords.contains(words[i])){
+							addToFrequencyList(words[i]);
+						}
+							
 					}	
 				}
 			}
@@ -40,15 +43,39 @@ public class StringUtils {
 		
 		return tokensForPage;
 	}
+	
 	public String[] splitToWords(String page){
 		//stop words considered as words
 		return page.split("[.,;\\s\\n]");		
-		
 	}
 	
-	public ArrayList<Integer> findTermPositions(){
+	public HashMap<String, ArrayList<Integer>> createTermPositions(ArrayList<String> tokens){
+		
+		HashMap<String, ArrayList<Integer>> termPositionsMap = new HashMap<String, ArrayList<Integer>>();
+		for(int i=0; i<tokens.size(); i++){
+			String token = tokens.get(i);
+			if(!Stats.stopWords.contains(token)){
+				if(!termPositionsMap.containsKey(token)){
+					ArrayList<Integer> al = new ArrayList<Integer>();
+					al.add(i+1);
+					termPositionsMap.put(token, new ArrayList<Integer>(al));
+				}
+				else{
+					ArrayList<Integer> al = new ArrayList<Integer>(termPositionsMap.get(token));
+					al.add(i+1);
+					termPositionsMap.put(token, new ArrayList<Integer>(al));
+				}
+			}
+		}
+		
+		return termPositionsMap;
+	}
+	
+	public ArrayList<Integer> findTermPositions(HashMap<String, ArrayList<Integer>> termPositionsMap, String word){
 		//implement this
-		return new ArrayList<Integer>();
+		ArrayList<Integer> positions = new ArrayList<Integer>();
+		positions = termPositionsMap.get(word);
+		return new ArrayList<Integer>(positions);
 	}
 	
 	public String getSubDomain(String url){
@@ -65,6 +92,7 @@ public class StringUtils {
 		System.out.println("sub "+subdomain +"  "+url);
 		return subdomain;
 	}
+	
 	public void loadStopWords(){		
 		try{
 			Scanner in = new Scanner(new File(Constants.FILE_NAME));
@@ -77,7 +105,6 @@ public class StringUtils {
 
 		} catch (FileNotFoundException e){
 			e.printStackTrace();
-
 		}
 	}
 
