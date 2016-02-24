@@ -3,6 +3,7 @@ import java.io.File;
 import java.io.FileWriter;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 
 import org.bson.Document;
 
@@ -65,23 +66,26 @@ public class Controller {
         		ArrayList<Integer> termPositions=new ArrayList<Integer>();
         		ArrayList<String> tokens = new ArrayList<String>();
         		HashMap<String, ArrayList<Integer>> termPositionsMap = new HashMap<String, ArrayList<Integer>>(); 
+        		HashSet<String> token_set = new HashSet<String>();  
         		
         		for(String url:records.keySet()){
         			tokens = stringUtils.tokenizePage(records.get(url).get("TEXT_RES"));
 //        			termPositions = stringUtils.findTermPositions(tokens);®
         			//records.get(url).get("HTML_RES");
         		}
-
+        		
+        		token_set.addAll(tokens);
         		termPositionsMap = stringUtils.createTermPositions(tokens);
-        		for(String token: tokens){
-        			if(!Stats.stopWords.contains(token)){
+        		for(String token: token_set){
+        			termPositions = stringUtils.findTermPositions(termPositionsMap, token);
+        			if(!Stats.stopWords.contains(token) && termPositions.size()>0){
         				ArrayList<InvertedIndexEntry> docItemList;
             			if(invertedIndex.get(token)==null){
             				docItemList = new ArrayList<InvertedIndexEntry>();
             			} else {
             				docItemList = invertedIndex.get(token);
             			}
-            			termPositions = stringUtils.findTermPositions(termPositionsMap, token);
+            			
             			InvertedIndexEntry docEntry = new InvertedIndexEntry();
             			docEntry.setDocId(i);
             			docEntry.setTermFrequency(termPositions.size());
@@ -102,17 +106,15 @@ public class Controller {
             			}
         			}
         		}
-        		
-        		
-        		if((i%1000)==0){
-        			System.out.println("la la done");
+
+        			System.out.println("la la done for document number: " + i);
         			//write after every 1000 records
         			MongoCollection<Document> invertedIndexCollection = Constants.db.getCollection("inverted_index");
-        			mongoConnector.saveIndexBlock(invertedIndexCollection, invertedIndex);
+    				mongoConnector.saveIndexBlock(invertedIndexCollection, invertedIndex);
         			//flush
         			invertedIndex.clear();
 //        			Stats.tokenfrequencyList.clear();
-        		}
+        		
         	}
         	/*StringUtils stringUtils = new StringUtils();
         	MyCrawler crawled = new MyCrawler();

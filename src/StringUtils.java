@@ -75,7 +75,7 @@ public class StringUtils {
 		//implement this
 		ArrayList<Integer> positions = new ArrayList<Integer>();
 		positions = termPositionsMap.get(word);
-		return new ArrayList<Integer>(positions);
+		return positions;
 	}
 	
 	public String getSubDomain(String url){

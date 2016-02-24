@@ -65,6 +65,7 @@ public class MongoDBConnector implements Runnable{
 				docList.add(listdoc);
 			}
 			doc.append("docs", Arrays.asList(docList));
+			
 			indexEntry.insertOne(doc);
 		}
 		
