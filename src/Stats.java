@@ -1,3 +1,4 @@
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -12,4 +13,6 @@ public class Stats {
 	public static Map<String, HashSet<String>> urlWordList = new HashMap<String, HashSet<String>>();
 	public static Map<String, Integer> threeGramSet = new HashMap<String, Integer>();
 	//public static Set<String> tokens = new HashSet<String>();
+	public static String query = "";
+	public static ArrayList<String> query_words = new ArrayList<String>();
 }

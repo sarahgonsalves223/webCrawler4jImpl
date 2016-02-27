@@ -17,6 +17,8 @@ public class StringUtils {
 	public ArrayList<String> tokenizePage(String page){
 		loadStopWords();
 		ArrayList<String> tokensForPage = new ArrayList<String>(); // should not be a set. need to generate separate token list for each page for 3-grams
+		// tokensForPage also does not contain stop words
+		page+="\n"; //added for query
 		BufferedReader bf=new BufferedReader(new StringReader(page));		
 		String line;
 		try{
@@ -25,57 +27,48 @@ public class StringUtils {
 				String [] words = line.toLowerCase().split(" ");
 
 				for(int i=0;i<words.length;i++){
+					words[i]=words[i].replaceAll("\\n+", " ");
 					words[i]=words[i].replaceAll("[^a-z0-9]+", "");
-					words[i]=words[i].toLowerCase().trim();				
-
-					if(!(words[i].matches("\\s+")|| words[i].length()<2)){
-						tokensForPage.add(words[i]);
-						if(!Stats.stopWords.contains(words[i])){
+					words[i]=words[i].toLowerCase().trim();
+					
+					//for term positions
+					if(!(words[i].matches("\\n+")||words[i].matches("\\s+")|| words[i].length()<2)){
+						
+						if(!(Stats.stopWords.contains(words[i]))){
 							addToFrequencyList(words[i]);
-						}
-							
+							tokensForPage.add(words[i]); //added for query, should actually contain stop words
+						}	
 					}	
 				}
 			}
+			
 		} catch (Exception e){
 			e.printStackTrace();
 		}
 		
 		return tokensForPage;
 	}
-	
 	public String[] splitToWords(String page){
 		//stop words considered as words
 		return page.split("[.,;\\s\\n]");		
+		
 	}
 	
-	public HashMap<String, ArrayList<Integer>> createTermPositions(ArrayList<String> tokens){
-		
-		HashMap<String, ArrayList<Integer>> termPositionsMap = new HashMap<String, ArrayList<Integer>>();
-		for(int i=0; i<tokens.size(); i++){
-			String token = tokens.get(i);
-			if(!Stats.stopWords.contains(token)){
-				if(!termPositionsMap.containsKey(token)){
-					ArrayList<Integer> al = new ArrayList<Integer>();
-					al.add(i+1);
-					termPositionsMap.put(token, new ArrayList<Integer>(al));
-				}
-				else{
-					ArrayList<Integer> al = new ArrayList<Integer>(termPositionsMap.get(token));
-					al.add(i+1);
-					termPositionsMap.put(token, new ArrayList<Integer>(al));
-				}
+	public HashMap<String,ArrayList<Integer>> findTermPositions(ArrayList<String> terms){
+		HashMap<String,ArrayList<Integer>> termPositions = new HashMap<String,ArrayList<Integer>>(); 
+		for(int i=0;i<terms.size();i++){
+			ArrayList<Integer> positions;
+			if(termPositions.get(terms.get(i))==null){
+				positions = new ArrayList<Integer>();
+			} else {
+				positions = termPositions.get(terms.get(i));
 			}
+			
+			positions.add(i);
+			termPositions.put(terms.get(i), positions);
 		}
 		
-		return termPositionsMap;
-	}
-	
-	public ArrayList<Integer> findTermPositions(HashMap<String, ArrayList<Integer>> termPositionsMap, String word){
-		//implement this
-		ArrayList<Integer> positions = new ArrayList<Integer>();
-		positions = termPositionsMap.get(word);
-		return positions;
+		return termPositions;
 	}
 	
 	public String getSubDomain(String url){
@@ -99,12 +92,14 @@ public class StringUtils {
 			while(in.hasNext()){
 				String current_word = in.next();
 				Stats.stopWords.add(current_word);
+//				System.out.println("Stop word "+Stats.stopWords.toString());
 			}
 
 			in.close();
 
 		} catch (FileNotFoundException e){
 			e.printStackTrace();
+
 		}
 	}
 

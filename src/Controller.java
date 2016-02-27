@@ -1,9 +1,5 @@
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileWriter;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 
 import org.bson.Document;
 
@@ -54,68 +50,54 @@ public class Controller {
         	Constants.mongoClient.close(); // comment if needed
         
         } else {
+        	/*
         	// process crawled data
         	StringUtils stringUtils = new StringUtils();
         	DBWrapper dbwrapper = new DBWrapper();
         	MongoCollection<Document> collection = Constants.db.getCollection("webcrawler_data");
         	HashMap<String, ArrayList<InvertedIndexEntry>> invertedIndex = new HashMap<String, ArrayList<InvertedIndexEntry>>();
-        	MongoDBConnector mongoConnector = new MongoDBConnector();
         	
-        	for(int i=1;i<=Constants.DB_ROW_COUNT;i++){
+        	for(int i=1;i<=200;i++){
         		HashMap<String,HashMap<String,String>> records =dbwrapper.fetchOne(collection,i);
-        		ArrayList<Integer> termPositions=new ArrayList<Integer>();
-        		ArrayList<String> tokens = new ArrayList<String>();
-        		HashMap<String, ArrayList<Integer>> termPositionsMap = new HashMap<String, ArrayList<Integer>>(); 
-        		HashSet<String> token_set = new HashSet<String>();  
+        		HashMap<String,ArrayList<Integer>> termPositions=null;
         		
         		for(String url:records.keySet()){
-        			tokens = stringUtils.tokenizePage(records.get(url).get("TEXT_RES"));
-//        			termPositions = stringUtils.findTermPositions(tokens);®
+        			ArrayList<String> terms = stringUtils.tokenizePage(records.get(url).get("TEXT_RES"));
+        			// positions of all terms in page
+        			termPositions = stringUtils.findTermPositions(terms);
         			//records.get(url).get("HTML_RES");
         		}
-        		
-        		token_set.addAll(tokens);
-        		termPositionsMap = stringUtils.createTermPositions(tokens);
-        		for(String token: token_set){
-        			termPositions = stringUtils.findTermPositions(termPositionsMap, token);
-        			if(!Stats.stopWords.contains(token) && termPositions.size()>0){
-        				ArrayList<InvertedIndexEntry> docItemList;
-            			if(invertedIndex.get(token)==null){
-            				docItemList = new ArrayList<InvertedIndexEntry>();
-            			} else {
-            				docItemList = invertedIndex.get(token);
-            			}
-            			
-            			InvertedIndexEntry docEntry = new InvertedIndexEntry();
-            			docEntry.setDocId(i);
-            			docEntry.setTermFrequency(termPositions.size());
-            			docEntry.setTermPositions(termPositions);
-            			docItemList.add(docEntry);
-            			invertedIndex.put(token,docItemList);
-            			
-            			if(i>=1){
-            				System.out.println();
-            				System.out.println("word is:" +token);
-            				System.out.println("Doc Id is:" +docEntry.getDocId());
-            				System.out.println("Frequency of this word in this doc is:" + docEntry.getTermFrequency());
-            				System.out.println("Term positions are:");
-            				for(int j=0; j<termPositions.size(); j++){
-            					System.out.print(termPositions.get(j) + "  ");
-            				}
-            				System.out.println();
-            			}
+        		//below processing per page
+        		for(String token:Stats.tokenfrequencyList.keySet()){
+        			ArrayList<InvertedIndexEntry> docItemList;
+        			if(invertedIndex.get(token)==null){
+        				docItemList = new ArrayList<InvertedIndexEntry>();
+        			} else {
+        				docItemList = invertedIndex.get(token);
         			}
+        			
+        			InvertedIndexEntry docEntry = new InvertedIndexEntry();
+        			docEntry.setDocId(i);
+        			docEntry.setTermFrequency(Stats.tokenfrequencyList.get(token));
+        			docEntry.setTermPositions(termPositions.get(token));
+        			docItemList.add(docEntry);
+        			invertedIndex.put(token,docItemList);        			
         		}
-
-        			System.out.println("la la done for document number: " + i);
-        			//write after every 1000 records
-        			MongoCollection<Document> invertedIndexCollection = Constants.db.getCollection("inverted_index");
-    				mongoConnector.saveIndexBlock(invertedIndexCollection, invertedIndex);
-        			//flush
-        			invertedIndex.clear();
-//        			Stats.tokenfrequencyList.clear();
         		
+        		//flush token frequency as it is per page
+        		System.out.println(Stats.tokenfrequencyList.toString());
+    			Stats.tokenfrequencyList.clear();
+    			
+        		if((i%100)==0){
+        			//write after every 100 records
+        			MongoCollection<Document> invertedIndexCollection = Constants.db.getCollection("new_inverted_index");
+        			dbwrapper.saveIndexBlock(invertedIndexCollection, invertedIndex);
+        			//flush
+        			invertedIndex.clear();        			
+        		}
         	}
+        	*/
+        	
         	/*StringUtils stringUtils = new StringUtils();
         	MyCrawler crawled = new MyCrawler();
         	DBWrapper db = new DBWrapper();
